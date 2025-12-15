@@ -26,8 +26,8 @@ body {
 }
 #loginBox h2 {
   color: #ff6a00;
-  margin-bottom: 20px;
   font-size: 50px;
+  margin-bottom: 10px;
 }
 input, select {
   width: 100%;
@@ -74,14 +74,10 @@ input, select {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 .stat-card h3 {
   color: #eb890a;
   font-size: 28px;
-}
-.stat-card p {
-  color: #777;
 }
 
 /* ===== MAIN GRID ===== */
@@ -101,14 +97,9 @@ input, select {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 .employee-card h3 {
-  color: #f5f2ef;
-}
-.employee-card p {
-  font-size: 0.9rem;
-  color: #555;
+  color: #eb890a;
 }
 .actions {
   margin-top: 12px;
@@ -127,11 +118,10 @@ button {
   background: rgb(238, 127, 36);
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 .form-box h2 {
-  margin-bottom: 15px;
-  color: #ece6e2;
+  color: #fff;
+  margin-bottom: 10px;
 }
 .save-btn {
   background: linear-gradient(135deg, #ff8c1a, #ff6a00);
@@ -140,6 +130,12 @@ button {
   padding: 12px;
   border-radius: 10px;
 }
+.search-btn {
+  background: #111;
+  color: white;
+  width: 100%;
+  margin-bottom: 12px;
+}
 
 /* ===== ACTIVITY ===== */
 .activity {
@@ -147,15 +143,9 @@ button {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-.activity ul {
-  list-style: none;
-  margin-top: 10px;
 }
 .activity li {
   font-size: 0.85rem;
-  color: #555;
   margin-bottom: 6px;
 }
 </style>
@@ -163,7 +153,7 @@ button {
 
 <body>
 
-<!-- ===== LOGIN ===== -->
+<!-- LOGIN -->
 <div id="loginBox">
   <h2>Hello Maya Hive Admin</h2>
   <h3>Sign In</h3>
@@ -173,7 +163,7 @@ button {
   <p id="error" style="color:red;"></p>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
+<!-- DASHBOARD -->
 <div id="dashboard">
 
   <div class="top-bar">
@@ -181,7 +171,6 @@ button {
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <!-- STATS -->
   <div class="stats">
     <div class="stat-card">
       <h3 id="totalEmployees">0</h3>
@@ -205,10 +194,14 @@ button {
     <!-- ADD / EDIT -->
     <div class="form-box">
       <h2>Add / Edit Employee</h2>
-      <input id="empId" disabled placeholder="Employee ID">
+
+      <input id="empId" placeholder="Enter Employee ID">
+      <button class="search-btn" onclick="searchEmployee()">Search</button>
+
       <input id="empName" placeholder="Name">
       <input id="empEmail" placeholder="Email">
       <input id="empPhone" placeholder="Phone">
+
       <select id="empDepartment">
         <option value="">Select Department</option>
         <option>Engineering</option>
@@ -216,12 +209,12 @@ button {
         <option>Marketing</option>
         <option>HR</option>
       </select>
-      <button class="save-btn" onclick="saveEmployee()">Save</button>
+
+      <button id="saveBtn" class="save-btn" onclick="saveEmployee()">Add Employee</button>
     </div>
 
   </div>
 
-  <!-- ACTIVITY LOG -->
   <div class="activity">
     <h2>Activity Log</h2>
     <ul id="activityLog"></ul>
@@ -230,105 +223,168 @@ button {
 </div>
 
 <script>
-const API = "https://employeemanagement-production-a990.up.railway.app";
-
-/* ===== AUTH ===== */
-function login() {
-  if (email.value === "admin@maya.com" && password.value === "1234") {
-    localStorage.setItem("admin", "true");
-    showDashboard();
-    log("Admin logged in");
-  } else {
-    error.innerText = "Invalid admin credentials";
-  }
-}
-function logout() {
-  localStorage.removeItem("admin");
-  location.reload();
-}
-if (localStorage.getItem("admin")) showDashboard();
-
-function showDashboard() {
-  loginBox.style.display = "none";
-  dashboard.style.display = "block";
-  loadEmployees();
-}
-
-/* ===== ACTIVITY ===== */
-function log(msg) {
-  const time = new Date().toLocaleString();
-  activityLog.innerHTML = `<li>[${time}] ${msg}</li>` + activityLog.innerHTML;
-  lastAction.innerText = msg;
-}
-
-/* ===== LOAD ===== */
-async function loadEmployees() {
-  const res = await fetch(`${API}/employees`);
-  const data = await res.json();
-  employeeGrid.innerHTML = "";
-  totalEmployees.innerText = data.data.length;
-
-  data.data.forEach(emp => {
-    employeeGrid.innerHTML += `
-      <div class="employee-card">
-        <h3>${emp.name}</h3>
-        <p>${emp.email}</p>
-        <p>${emp.phone}</p>
-        <p>${emp.department}</p>
-        <div class="actions">
-          <button class="edit-btn" onclick="editEmployee('${emp._id}','${emp.name}','${emp.email}','${emp.phone}','${emp.department}')">Edit</button>
-          <button class="remove-btn" onclick="removeEmployee('${emp._id}')">Remove</button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-/* ===== ADD / EDIT ===== */
-function editEmployee(id,name,email,phone,dept){
-  empId.value = id;
-  empName.value = name;
-  empEmail.value = email;
-  empPhone.value = phone;
-  empDepartment.value = dept;
-}
-
-async function saveEmployee(){
-  const payload = {
-    name: empName.value,
-    email: empEmail.value,
-    phone: empPhone.value,
-    department: empDepartment.value
-  };
-
-  if (empId.value) {
-    await fetch(`${API}/employees/${empId.value}`, {
-      method: "PUT",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    log("Employee updated");
-  } else {
-    await fetch(`${API}/employees`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    log("New employee added");
-  }
-
-  empId.value = empName.value = empEmail.value = empPhone.value = "";
-  loadEmployees();
-}
-
-/* ===== REMOVE ===== */
-async function removeEmployee(id){
-  if(!confirm("Remove employee?")) return;
-  await fetch(`${API}/employees/${id}`, {method:"DELETE"});
-  log("Employee removed");
-  loadEmployees();
-}
-</script>
-
+    const API = "https://employeemanagement-production-a990.up.railway.app";
+    
+    /* ================= AUTH ================= */
+    function login() {
+      if (email.value === "admin@maya.com" && password.value === "1234") {
+        localStorage.setItem("admin", "true");
+        showDashboard();
+        logActivity("Admin logged in");
+      } else {
+        error.innerText = "Invalid admin credentials";
+      }
+    }
+    
+    function logout() {
+      localStorage.removeItem("admin");
+      location.reload();
+    }
+    
+    if (localStorage.getItem("admin")) showDashboard();
+    
+    function showDashboard() {
+      loginBox.style.display = "none";
+      dashboard.style.display = "block";
+      loadEmployees();
+    }
+    
+    /* ================= ACTIVITY ================= */
+    function logActivity(msg) {
+      const time = new Date().toLocaleString();
+      activityLog.innerHTML =
+        `<li>[${time}] ${msg}</li>` + activityLog.innerHTML;
+      lastAction.innerText = msg;
+    }
+    
+    /* ================= LOAD EMPLOYEES ================= */
+    async function loadEmployees() {
+      try {
+        const res = await fetch(`${API}/employees`);
+        const json = await res.json();
+    
+        if (!json.data) throw "Invalid API response";
+    
+        employeeGrid.innerHTML = "";
+        totalEmployees.innerText = json.data.length;
+    
+        json.data.forEach(emp => {
+          employeeGrid.innerHTML += `
+            <div class="employee-card">
+              <h3>${emp.name}</h3>
+              <p>${emp.email}</p>
+              <p>${emp.phone}</p>
+              <p>${emp.department}</p>
+              <div class="actions">
+                <button class="edit-btn"
+                  onclick="loadEmployeeToForm('${emp._id}')">
+                  Edit
+                </button>
+                <button class="remove-btn"
+                  onclick="removeEmployee('${emp._id}')">
+                  Remove
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) {
+        alert("Failed to load employees. Check API.");
+        console.error(err);
+      }
+    }
+    
+    /* ================= SEARCH / EDIT ================= */
+    async function loadEmployeeToForm(id) {
+      try {
+        const res = await fetch(`${API}/employees/${id}`);
+        const json = await res.json();
+    
+        if (!json.data) throw "Employee not found";
+    
+        fillForm(json.data);
+        logActivity(`Loaded employee ${json.data.name} for edit`);
+      } catch (err) {
+        alert("Employee not found");
+      }
+    }
+    
+    async function searchEmployee() {
+      if (!empId.value) {
+        alert("Enter Employee ID");
+        return;
+      }
+      await loadEmployeeToForm(empId.value);
+    }
+    
+    /* ================= FORM FILL ================= */
+    function fillForm(emp) {
+      empId.value = emp.id;
+      empName.value = emp.name;
+      empEmail.value = emp.email;
+      empPhone.value = emp.phone;
+      empDepartment.value = emp.department;
+      saveBtn.innerText = "Update Employee";
+    }
+    
+    /* ================= SAVE ================= */
+    async function saveEmployee() {
+      const payload = {
+        name: empName.value,
+        email: empEmail.value,
+        phone: empPhone.value,
+        department: empDepartment.value
+      };
+    
+      try {
+        if (empId.value) {
+          await fetch(`${API}/employees/${empId.value}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          logActivity("Employee updated");
+        } else {
+          await fetch(`${API}/employees`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          logActivity("New employee added");
+        }
+    
+        clearForm();
+        loadEmployees();
+      } catch (err) {
+        alert("Save failed");
+        console.error(err);
+      }
+    }
+    
+    /* ================= CLEAR ================= */
+    function clearForm() {
+      empId.value = "";
+      empName.value = "";
+      empEmail.value = "";
+      empPhone.value = "";
+      empDepartment.value = "";
+      saveBtn.innerText = "Add Employee";
+    }
+    
+    /* ================= REMOVE ================= */
+    async function removeEmployee(id) {
+      if (!confirm("Are you sure you want to remove this employee?")) return;
+    
+      try {
+        await fetch(`${API}/employees/${id}`, { method: "DELETE" });
+        logActivity("Employee removed");
+        loadEmployees();
+      } catch (err) {
+        alert("Delete failed");
+      }
+    }
+    </script>
+    
 </body>
 </html>
+
