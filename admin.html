@@ -176,6 +176,91 @@
       font-size: 0.85rem;
       margin-bottom: 6px;
     }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: translateY(0);
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .cancel-btn {
+      background: #ccc;
+      color: #333;
+    }
+
+    /* ===== SEARCH RESULTS ===== */
+    #searchResults {
+      margin-top: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: none;
+      /* Hidden by default */
+    }
+
+    .search-result-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: #f9f9f9;
+    }
   </style>
 </head>
 
@@ -219,27 +304,14 @@
       <!-- EMPLOYEES -->
       <div class="employee-grid" id="employeeGrid"></div>
 
-      <!-- ADD / EDIT -->
       <div class="form-box">
-        <h2>Add / Edit Employee</h2>
+        <h2>Actions</h2>
+        <button class="save-btn" onclick="openEmployeeModal()" style="margin-bottom: 20px;">+ Add New Employee</button>
 
-        <input id="empId" placeholder="Enter Employee ID">
+        <h3>Search</h3>
+        <input id="searchIdInput" placeholder="Enter Employee ID">
         <button class="search-btn" onclick="searchEmployee()">Search</button>
-
-        <input id="empName" placeholder="Name">
-        <input id="empEmail" placeholder="Email">
-        <input id="empPhone" placeholder="Phone">
-        <input id="empDob" type="date" placeholder="Date of Birth">
-
-        <select id="empDepartment">
-          <option value="">Select Department</option>
-          <option>Engineering</option>
-          <option>Sales</option>
-          <option>Marketing</option>
-          <option>HR</option>
-        </select>
-
-        <button id="saveBtn" class="save-btn" onclick="saveEmployee()">Add Employee</button>
+        <div id="searchResults"></div>
       </div>
 
     </div>
@@ -249,6 +321,45 @@
       <ul id="activityLog"></ul>
     </div>
 
+  </div>
+
+  <!-- EMPLOYEE MODAL -->
+  <div id="employeeModal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('employeeModal')">&times;</span>
+      <h2 id="modalTitle">Add Employee</h2>
+
+      <input type="hidden" id="empId">
+      <input id="empName" placeholder="Name">
+      <input id="empEmail" placeholder="Email">
+      <input id="empPhone" placeholder="Phone">
+      <input id="empDob" type="date" placeholder="Date of Birth">
+
+      <select id="empDepartment">
+        <option value="">Select Department</option>
+        <option>Engineering</option>
+        <option>Sales</option>
+        <option>Marketing</option>
+        <option>HR</option>
+      </select>
+
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeModal('employeeModal')">Cancel</button>
+        <button class="save-btn" onclick="saveEmployee()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="confirmTitle">Are you sure?</h2>
+      <p id="confirmMessage">Do you want to proceed?</p>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeModal('confirmModal')">No</button>
+        <button class="remove-btn" id="confirmYesBtn">Yes</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -265,7 +376,11 @@
       }
     }
 
-    function logout() {
+    function logout(confirm = false) {
+      if (!confirm) {
+        openConfirmModal("Logout", "Are you sure you want to logout?", () => logout(true));
+        return;
+      }
       localStorage.removeItem("admin");
       location.reload();
     }
@@ -276,6 +391,51 @@
       loginBox.style.display = "none";
       dashboard.style.display = "block";
       loadEmployees();
+
+      // Close modals on outside click
+      window.onclick = function (event) {
+        if (event.target.classList.contains('modal-overlay')) {
+          event.target.classList.remove('show');
+          setTimeout(() => event.target.style.display = 'none', 300);
+        }
+      }
+    }
+
+    /* ================= MODALS ================= */
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.style.display = 'flex';
+      // tiny delay to allow display flex to apply before opacity transition
+      setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('show');
+      setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    function openEmployeeModal() {
+      clearForm();
+      document.getElementById('modalTitle').innerText = "Add Employee";
+      openModal('employeeModal');
+    }
+
+    function openConfirmModal(title, msg, onYes) {
+      document.getElementById('confirmTitle').innerText = title;
+      document.getElementById('confirmMessage').innerText = msg;
+
+      const yesBtn = document.getElementById('confirmYesBtn');
+      // Remove old listeners to avoid stacking
+      const newYesBtn = yesBtn.cloneNode(true);
+      yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+
+      newYesBtn.onclick = () => {
+        onYes();
+        closeModal('confirmModal');
+      };
+
+      openModal('confirmModal');
     }
 
     /* ================= ACTIVITY ================= */
@@ -298,32 +458,63 @@
         totalEmployees.innerText = json.data.length;
 
         json.data.forEach(emp => {
-          employeeGrid.innerHTML += `
-            <div class="employee-card">
-              <h3>${emp.name}</h3>
-              <p>${emp.email}</p>
-              <p>${emp.phone}</p>
-              <p>${emp.department}</p>
-              <div class="actions">
-                <button class="edit-btn"
-                  onclick="loadEmployeeToForm('${emp.id}')">
-                  Edit
-                </button>
-                <button class="remove-btn"
-                  onclick="removeEmployee('${emp.id}')">
-                  Remove
-                </button>
-              </div>
-            </div>
-          `;
+          employeeGrid.innerHTML += renderEmployeeCard(emp);
         });
       } catch (err) {
-        alert("Failed to load employees. Check API.");
+        // alert("Failed to load employees. Check API.");
         console.error(err);
       }
     }
 
+    function renderEmployeeCard(emp) {
+      return `
+        <div class="employee-card">
+          <h3>${emp.name}</h3>
+          <p style="font-size: 0.9em; color: #666;">ID: ${emp.id}</p>
+          <p>${emp.email}</p>
+          <p>${emp.phone}</p>
+          <p>${emp.department}</p>
+          <div class="actions">
+            <button class="edit-btn" onclick="loadEmployeeToForm('${emp.id}')">Edit</button>
+            <button class="remove-btn" onclick="removeEmployee('${emp.id}')">Remove</button>
+          </div>
+        </div>
+      `;
+    }
+
     /* ================= SEARCH / EDIT ================= */
+    async function searchEmployee() {
+      const id = searchIdInput.value;
+      if (!id) {
+        alert("Enter Employee ID");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/employees/${id}`);
+        const json = await res.json();
+
+        if (!json.data) throw "Employee not found";
+
+        // Show result in searchResults container
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = `
+          <div class="search-result-item">
+            <div>
+              <strong>${json.data.name}</strong> (${json.data.department})<br>
+              <small>${json.data.email}</small>
+            </div>
+            <button class="edit-btn" onclick="loadEmployeeToForm('${json.data.id}')">Edit</button>
+          </div>
+        `;
+
+      } catch (err) {
+        document.getElementById('searchResults').style.display = 'block';
+        document.getElementById('searchResults').innerHTML = `<div class="search-result-item" style="color:red;">Employee not found</div>`;
+      }
+    }
+
     async function loadEmployeeToForm(id) {
       try {
         const res = await fetch(`${API}/employees/${id}`);
@@ -332,44 +523,38 @@
         if (!json.data) throw "Employee not found";
 
         fillForm(json.data);
+        document.getElementById('modalTitle').innerText = "Edit Employee";
+        openModal('employeeModal');
         logActivity(`Loaded employee ${json.data.name} for edit`);
       } catch (err) {
         alert("Employee not found");
       }
     }
 
-    async function searchEmployee() {
-      if (!empId.value) {
-        alert("Enter Employee ID");
-        return;
-      }
-      await loadEmployeeToForm(empId.value);
-    }
-
     /* ================= FORM FILL ================= */
     function fillForm(emp) {
-      empId.value = emp.id;
-      empName.value = emp.name;
-      empEmail.value = emp.email;
-      empPhone.value = emp.phone;
-      empDob.value = emp.dateOfBirth ? emp.dateOfBirth.split('T')[0] : '';
-      empDepartment.value = emp.department;
-      saveBtn.innerText = "Update Employee";
+      document.getElementById('empId').value = emp.id;
+      document.getElementById('empName').value = emp.name;
+      document.getElementById('empEmail').value = emp.email;
+      document.getElementById('empPhone').value = emp.phone;
+      document.getElementById('empDob').value = emp.dateOfBirth ? emp.dateOfBirth.split('T')[0] : '';
+      document.getElementById('empDepartment').value = emp.department;
     }
 
     /* ================= SAVE ================= */
     async function saveEmployee() {
+      const empIdVal = document.getElementById('empId').value;
       const payload = {
-        name: empName.value,
-        email: empEmail.value,
-        phone: empPhone.value,
-        dateOfBirth: empDob.value,
-        department: empDepartment.value
+        name: document.getElementById('empName').value,
+        email: document.getElementById('empEmail').value,
+        phone: document.getElementById('empPhone').value,
+        dateOfBirth: document.getElementById('empDob').value,
+        department: document.getElementById('empDepartment').value
       };
 
       try {
-        if (empId.value) {
-          await fetch(`${API}/employees/${empId.value}`, {
+        if (empIdVal) {
+          await fetch(`${API}/employees/${empIdVal}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -384,7 +569,7 @@
           logActivity("New employee added");
         }
 
-        clearForm();
+        closeModal('employeeModal');
         loadEmployees();
       } catch (err) {
         alert("Save failed");
@@ -394,26 +579,25 @@
 
     /* ================= CLEAR ================= */
     function clearForm() {
-      empId.value = "";
-      empName.value = "";
-      empEmail.value = "";
-      empPhone.value = "";
-      empDob.value = "";
-      empDepartment.value = "";
-      saveBtn.innerText = "Add Employee";
+      document.getElementById('empId').value = "";
+      document.getElementById('empName').value = "";
+      document.getElementById('empEmail').value = "";
+      document.getElementById('empPhone').value = "";
+      document.getElementById('empDob').value = "";
+      document.getElementById('empDepartment').value = "";
     }
 
     /* ================= REMOVE ================= */
-    async function removeEmployee(id) {
-      if (!confirm("Are you sure you want to remove this employee?")) return;
-
-      try {
-        await fetch(`${API}/employees/${id}`, { method: "DELETE" });
-        logActivity("Employee removed");
-        loadEmployees();
-      } catch (err) {
-        alert("Delete failed");
-      }
+    function removeEmployee(id) {
+      openConfirmModal("Remove Employee", "Are you sure you want to remove this employee?", async () => {
+        try {
+          await fetch(`${API}/employees/${id}`, { method: "DELETE" });
+          logActivity("Employee removed");
+          loadEmployees();
+        } catch (err) {
+          alert("Delete failed");
+        }
+      });
     }
   </script>
 
