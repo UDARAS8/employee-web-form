@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -238,6 +239,7 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -261,11 +263,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>Welcome to Maya Hive</h1>
-           
+
         </div>
 
         <div class="main-content">
@@ -309,7 +312,7 @@
                     </div>
 
                     <button type="submit" class="btn"> Submit</button>
-                
+
                 </form>
             </div>
 
@@ -321,7 +324,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'employeemanagement-production-a990.up.railway.app';
+        const API_BASE_URL = 'https://employeemanagement-production-a990.up.railway.app';
 
         // Show message function
         function showMessage(elementId, message, type = 'success') {
@@ -392,7 +395,7 @@
                     data.data.forEach(employee => {
                         const employeeCard = document.createElement('div');
                         employeeCard.className = 'employee-card';
-                        
+
                         // Format date for display
                         const dateOfBirth = new Date(employee.dateOfBirth).toLocaleDateString('en-US', {
                             year: 'numeric',
@@ -442,4 +445,5 @@
         fetchEmployees();
     </script>
 </body>
+
 </html>
